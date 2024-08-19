@@ -22,7 +22,7 @@ import matplotlib.pyplot as plot
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from dreamcoder.utilities import *
 import matplotlib
-plot.style.use('seaborn-whitegrid')
+# plot.style.use('seaborn-whitegrid')
 import matplotlib.colors as colors
 import matplotlib.cm as cm
 

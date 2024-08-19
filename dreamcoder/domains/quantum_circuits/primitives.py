@@ -164,7 +164,7 @@ class QuantumCircuitException(Exception):
 
 
 def mat_to_tensor(mat):
-    n_qubits = int(np.math.log2(mat.shape[0]))
+    n_qubits = int(np.log2(mat.shape[0]))
     return mat.reshape([2]*n_qubits*2)
     # first qubits are output, last qubits are input
 
@@ -787,7 +787,7 @@ grammar = dc.grammar.Grammar.uniform(primitives)
 # Maybe it should return a function?
 #
 def execute_quantum_algorithm(p, n_qubits, timeout=None):
-    arguments = (*range(GLOBAL_NQUBIT_TASK), no_op(GLOBAL_NQUBIT_TASK))
+    arguments = (*range(n_qubits), no_op(n_qubits))
     try:
         circuit = execute_program(p, arguments)
         return circuit_to_mat(circuit)
@@ -796,7 +796,8 @@ def execute_quantum_algorithm(p, n_qubits, timeout=None):
         return None
 
 
-def execute_program(program, arguments):
+def execute_program(program:dc.program.Program, arguments:tuple):
+    # Arguments has shape (n_qubits, (arg1, arg2,...))
     # TODO: remove eprint
     if "rep" in str(program):
         eprint(program)

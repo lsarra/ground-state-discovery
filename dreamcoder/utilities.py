@@ -1,4 +1,7 @@
 import inspect
+
+if not hasattr(inspect, 'getargspec'):
+    inspect.getargspec = inspect.getfullargspec
 import signal
 import random
 import time
@@ -10,6 +13,7 @@ import math
 import pickle as pickle
 from itertools import chain
 import heapq
+from typing import Callable
 
 import hashlib
 
@@ -83,7 +87,7 @@ def curry(fn):
     return tmp_curry(fn)
 
 class Curried:
-    def __init__(self, f, arguments=None, arity=None):
+    def __init__(self, f:Callable, arguments:list=None, arity:int=None):
         if arity is None:
             arity = len(inspect.getargspec(f)[0])
         self.f = f
@@ -99,10 +103,12 @@ class Curried:
             return Curried(self.f, arguments=arguments, arity=self.arity)
 
     def __str__(self):
-        if len(self.arguments) == 0:
-            return f"Curried({self.f}/{self.arity})"
-        else:
-            return f"Curried({self.f}/{self.arity}, {', '.join(map(str,self.arguments))})"
+        arg_names = inspect.getargspec(self.f)[0]
+        arg_description = ""
+        for idx, name in enumerate(arg_names):
+            val = self.arguments[idx] if idx < len(self.arguments) else "???"
+            arg_description += f"{name}={val}, "
+        return f"Curried(f={self.f}/{self.arity}, arguments=[{arg_description}])"
 
     def __repr__(self):
         return str(self)
@@ -881,7 +887,7 @@ def showArrayAsImage(a):
 class ParseFailure(Exception):
     pass
 
-def parseSExpression(s):
+def parseSExpression(s:str):
     s = s.strip()
     def p(n):
         while n <= len(s) and s[n].isspace(): n += 1

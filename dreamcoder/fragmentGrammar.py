@@ -4,7 +4,7 @@ from dreamcoder.program import *
 
 from itertools import chain
 import time
-
+from typing import List
 
 class FragmentGrammar(object):
     def __init__(self, logVariable, productions):
@@ -282,8 +282,8 @@ class FragmentGrammar(object):
 
     @staticmethod
     def induceFromFrontiers(
-            g0,
-            frontiers,
+            g0:Grammar,
+            frontiers:List[FrontierEntry],
             _=None,
             topK=1,
             topk_use_only_likelihood=False,
@@ -298,6 +298,8 @@ class FragmentGrammar(object):
         eprint("Inducing a grammar from", len(frontiers), "frontiers")
 
         bestGrammar = FragmentGrammar.fromGrammar(g0)
+        
+        # TODO: enable again
         oldJoint = bestGrammar.jointFrontiersMDL(frontiers, CPUs=1)
 
         # "restricted frontiers" only contain the top K according to the best grammar
@@ -391,6 +393,7 @@ class FragmentGrammar(object):
             # Use parameters that were found during search
             pass
 
+        # TODO: Enable again
         eprint("Old joint = %f\tNew joint = %f\n" %
                (oldJoint, bestGrammar.jointFrontiersMDL(frontiers, CPUs=CPUs)))
         # Return all of the frontiers, which have now been rewritten to use the

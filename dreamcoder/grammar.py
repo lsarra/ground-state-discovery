@@ -401,7 +401,8 @@ class Grammar(object):
 
         return summary
 
-    def logLikelihood(self, request, expression):
+    def logLikelihood(self, request:dc.type.TypeConstructor, expression:dc.program.Program):
+        # Request is usually an 'arrow'
         summary = self.closedLikelihoodSummary(request, expression)
         if summary is None:
             eprint(

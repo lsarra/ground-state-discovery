@@ -22,7 +22,7 @@ class QuantumCircuitException(Exception):
 
 
 def mat_to_tensor(mat):
-    n_qubits = int(np.math.log2(mat.shape[0]))
+    n_qubits = int(np.log2(mat.shape[0]))
     return mat.reshape([2]*n_qubits*2)
     # first qubits are output, last qubits are input
 

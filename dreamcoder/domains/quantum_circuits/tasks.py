@@ -16,7 +16,7 @@ class QuantumTask(dc.task.Task):
                                           examples=[((*range(self.n_qubits), no_op(self.n_qubits),), (self.target_circuit_evaluation,),)],
                                           features=[])
 
-    def logLikelihood(self, e, timeout=None):
+    def logLikelihood(self, e:dc.program, timeout=None):
         if QuantumTask.last_circuit is not e:
             QuantumTask.last_circuit = e
             QuantumTask.last_circuit_evaluation = None

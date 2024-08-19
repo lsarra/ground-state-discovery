@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from typing import List
 from dreamcoder.type import *
 from dreamcoder.utilities import *
 
@@ -146,8 +146,8 @@ class Program(object):
     def isNamedHole(self): return False
 
     @staticmethod
-    def parse(s):
-        s = parseSExpression(s)
+    def parse(s:str)->"Program":
+        e = parseSExpression(s)
         def p(e):
             if isinstance(e,list):
                 if e[0] == '#':
@@ -166,7 +166,7 @@ class Program(object):
             if e == '??' or e == '?': return FragmentVariable.single
             if e == '<HOLE>': return Hole.single
             raise ParseFailure((s,e))
-        return p(s)
+        return p(e)
 
     @staticmethod
     def _parse(s,n):
@@ -413,7 +413,7 @@ class Index(Program):
     These indices encode variables.
     '''
 
-    def __init__(self, i):
+    def __init__(self, i:int):
         self.i = i
 
     def show(self, isFunction): return "$%d" % self.i
@@ -434,7 +434,7 @@ class Index(Program):
                                                 *arguments,
                                                 **keywords)
 
-    def evaluate(self, environment):
+    def evaluate(self, environment:List[int]):
         return environment[self.i]
 
     def inferType(self, context, environment, freeVariables):

@@ -35,3 +35,7 @@ tests/out/
 .vscode/*
 logs
 old_logs
+
+# Added by cargo
+
+/target
