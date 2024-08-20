@@ -35,7 +35,9 @@ def induceGrammar(*args, **kwargs):
     
     with timing("Induced a grammar"):
         if backend == "pypy":
-            g, newFrontiers = callCompiled(pypyInduce, *args, **kwargs)
+            # NOTE: pypy disabled, using python
+            # g, newFrontiers = callCompiled(pypyInduce, *args, **kwargs)
+            g, newFrontiers = pypyInduce(*args, **kwargs)
         elif backend == "rust":
             g, newFrontiers = rustInduce(*args, **kwargs)
         elif backend == "vs":

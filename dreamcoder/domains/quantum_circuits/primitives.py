@@ -11,10 +11,11 @@ global GLOBAL_N_QUBIT_TASK
 try:
     import matplotlib.pyplot as plt
     import qiskit as qk
-    from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit, Aer
-    backend = Aer.get_backend('unitary_simulator')
-    from qiskit.transpiler.synthesis import solovay_kitaev
-    skd = solovay_kitaev.SolovayKitaevDecomposition()
+    from qiskit import QuantumRegister, ClassicalRegister, QuantumCircuit
+    from qiskit.transpiler.passes.synthesis import solovay_kitaev_synthesis
+    from qiskit.quantum_info import Operator
+    # backend = qk.get_backend('unitary_simulator')
+    skd = solovay_kitaev_synthesis.SolovayKitaev()
 
     # ---------------------------------------------------------------------------------
     # Transpiler configuration
@@ -47,7 +48,7 @@ try:
 
         def get_result(self, circuit):
             # TODO: this should also be normalized as the other circuit!
-            return np.array(qk.execute(circuit, backend).result().get_unitary()).T
+            return np.array(Operator(circuit).data).T
 
         def __exit__(self, *args, **kwargs):
             self.result = self.get_result(self.circuit)
@@ -69,7 +70,7 @@ try:
                 eprint(self.result)
                 eprint(e)
 
-        def get_transpiled(self, circuit):
+        def get_transpiled(self, circuit, backend=None):
             transpiled = qk.transpile(circuit, backend)
             circuit2 = pm.run(transpiled)
             discretized = skd(circuit2)
@@ -400,7 +401,7 @@ qiskit_full_op_names = {
     "z": lambda QT, q1: QT.circuit.z(QT.q(q1)),
     "sx": lambda QT, q1: QT.circuit.sx(QT.q(q1)),
     "sxdg": lambda QT, q1: QT.circuit.sxdg(QT.q(q1)),
-    "cnot": lambda QT, q1, q2: QT.circuit.cnot(QT.q(q1), QT.q(q2)),
+    "cnot": lambda QT, q1, q2: QT.circuit.cx(QT.q(q1), QT.q(q2)), # qiskit update
     "cy": lambda QT, q1, q2: QT.circuit.cy(QT.q(q1), QT.q(q2)),
     "cz": lambda QT, q1, q2: QT.circuit.cz(QT.q(q1), QT.q(q2)),
     "cs": lambda QT, q1, q2: QT.circuit.append(qk.circuit.library.SGate().control(1), (QT.q(q1), QT.q(q2))),

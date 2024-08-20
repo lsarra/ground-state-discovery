@@ -6,9 +6,10 @@ matplotlib
 torch
 scikit-learn
 line_profiler
-qiskit-aer==0.10.4
+qiskit==1.2
+# qiskit-aer==0.10.4
 rust
-git+https://github.com/LNoorl/qiskit-terra.git@5f2b29139782f11606357e9621e7e7edbe2de260
+# git+https://github.com/LNoorl/qiskit-terra.git@5f2b29139782f11606357e9621e7e7edbe2de260
 rsmf
 click
 pylatexenc
