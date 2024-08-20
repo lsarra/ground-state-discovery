@@ -485,7 +485,9 @@ def bottom_up_parallel_worker(solver, g, pcfg, pps, tasks, timeout, maximumFront
     # Quantum Circuits:
     # Instead of checking if the program is a solution for each task,
     # look if the produced unitary is in the task dictionary
-    tasks_hash = {hash_complex_array(task.target_circuit_evaluation):idx for idx, task in enumerate(tasks)}
+    tasks_hash = defaultdict(list)
+    for idx, task in enumerate(tasks):
+        tasks_hash[hash_complex_array(task.target_circuit_evaluation)].append(idx)
     
     for e in pcfg.quantized_enumeration(skeletons=pps,
                                         inputs=inputs,
@@ -499,8 +501,8 @@ def bottom_up_parallel_worker(solver, g, pcfg, pps, tasks, timeout, maximumFront
         prior = None
 
         circuit = execute_quantum_algorithm(e,dc.domains.quantum_circuits.primitives.GLOBAL_NQUBIT_TASK)
-        n = tasks_hash.get(hash_complex_array(circuit),None)
-        if n is not None:    
+        task_indices = tasks_hash[hash_complex_array(circuit)]
+        for n in task_indices:    
             
             task = tasks[n]
             likelihood = task.logLikelihood(e, evaluationTimeout)
