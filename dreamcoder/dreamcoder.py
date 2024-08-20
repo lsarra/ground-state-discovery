@@ -1,5 +1,5 @@
+from collections.abc import Iterator
 import datetime
-
 import dill
 
 from dreamcoder.compression import induceGrammar
@@ -177,7 +177,7 @@ def ecIterator(grammar, tasks,
                storeTaskMetrics=False,
                rewriteTaskMetrics=True,
                auxiliaryLoss=False,
-               custom_wake_generative=None):
+               custom_wake_generative=None) -> Iterator[ECResult]:
     if enumerationTimeout is None:
         eprint(
             "Please specify an enumeration timeout:",
@@ -207,7 +207,7 @@ def ecIterator(grammar, tasks,
         eprint("Matrix rank only applies to contextual recognition models, aborting")
         assert False
     assert useDSL or useRecognitionModel, "You specified that you didn't want to use the DSL AND you don't want to use the recognition model. Figure out what you want to use."
-    if testingTimeout > 0 and len(testingTasks) == 0:
+    if testingTimeout  and len(testingTasks) == 0:
         eprint("You specified a testingTimeout, but did not provide any held out testing tasks, aborting.")
         assert False
 
@@ -376,7 +376,7 @@ def ecIterator(grammar, tasks,
         reportMemory()
 
         # Evaluate on held out tasks if we have them
-        if testingTimeout > 0 and ((j % testEvery == 0) or (j == iterations - 1)):
+        if testingTimeout and ((j % testEvery == 0) or (j == iterations - 1)):
             eprint("Evaluating on held out testing tasks for iteration: %d" % (j))
             evaluateOnTestingTasks(result, testingTasks, grammar,
                                    CPUs=CPUs, maximumFrontier=maximumFrontier,
@@ -692,7 +692,7 @@ def consolidate(result, grammar, _=None, topK=None, arity=None, pseudoCounts=Non
     else:
         grammar, compressionFrontiers = induceGrammar(grammar, compressionFrontiers,
                                                       topK=topK,
-                                                      pseudoCounts=pseudoCounts, a=arity,
+                                                      pseudoCounts=pseudoCounts, arity=arity,
                                                       aic=aic, structurePenalty=structurePenalty,
                                                       topk_use_only_likelihood=False,
                                                       backend=compressor, CPUs=CPUs, iteration=iteration)

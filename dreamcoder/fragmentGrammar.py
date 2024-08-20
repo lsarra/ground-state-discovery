@@ -284,13 +284,13 @@ class FragmentGrammar(object):
     def induceFromFrontiers(
             g0:Grammar,
             frontiers:List[FrontierEntry],
+            arity,
             _=None,
             topK=1,
             topk_use_only_likelihood=False,
             pseudoCounts=1.0,
             aic=1.0,
             structurePenalty=0.001,
-            a=0,
             CPUs=1):
         _ = topk_use_only_likelihood # not used in python compressor
         originalFrontiers = frontiers
@@ -328,7 +328,7 @@ class FragmentGrammar(object):
             while True:
                 restrictedFrontiers = restrictFrontiers()
                 fragments = [f
-                             for f in proposeFragmentsFromFrontiers(restrictedFrontiers, a, CPUs=CPUs)
+                             for f in proposeFragmentsFromFrontiers(restrictedFrontiers, arity, CPUs=CPUs)
                              if f not in bestGrammar.primitives
                              and defragment(f) not in bestGrammar.primitives]
                 eprint("Proposed %d fragments." % len(fragments))
