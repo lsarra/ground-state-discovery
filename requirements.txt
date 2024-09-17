@@ -1,15 +1,14 @@
-ipykernel
-numpy
-frozendict
-tqdm
-matplotlib
-torch
-scikit-learn
-line_profiler
-qiskit==1.2
-# qiskit-aer==0.10.4
-rust
-# git+https://github.com/LNoorl/qiskit-terra.git@5f2b29139782f11606357e9621e7e7edbe2de260
-rsmf
 click
+dill
+frozendict
+ipykernel
+line_profiler
+matplotlib
+numpy
 pylatexenc
+qiskit==1.1.2 # required for pickle compatibility
+rsmf
+rust
+scikit-learn
+torch
+tqdm
