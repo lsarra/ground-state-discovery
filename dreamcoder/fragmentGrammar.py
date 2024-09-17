@@ -299,8 +299,7 @@ class FragmentGrammar(object):
 
         bestGrammar = FragmentGrammar.fromGrammar(g0)
         
-        # TODO: enable again
-        oldJoint = bestGrammar.jointFrontiersMDL(frontiers, CPUs=1)
+        oldJoint = bestGrammar.jointFrontiersMDL(frontiers, CPUs=CPUs)
 
         # "restricted frontiers" only contain the top K according to the best grammar
         def restrictFrontiers():

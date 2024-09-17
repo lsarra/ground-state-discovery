@@ -396,14 +396,22 @@ def proposeFragmentsFromProgram(p, arity):
 
 def proposeFragmentsFromFrontiers(frontiers, a, CPUs=1):
     fragmentsFromEachFrontier = parallelMap(
-        CPUs, lambda frontier: {
-            fp for entry in frontier.entries for f in proposeFragmentsFromProgram(
-                entry.program, a) for fp in proposeFragmentsFromFragment(f)}, frontiers)
-    allFragments = Counter(f for frontierFragments in fragmentsFromEachFrontier
-                           for f in frontierFragments)
-    candidates = [fragment for fragment, frequency in allFragments.items()
-            if frequency >= 2 and fragment.wellTyped() and nontrivial(fragment)]
-    
-    
-    
+        CPUs,
+        lambda frontier: {
+            fp
+            for entry in frontier.entries
+            for f in proposeFragmentsFromProgram(entry.program, a)
+            for fp in proposeFragmentsFromFragment(f)
+        },
+        frontiers,
+    )
+    allFragments = Counter(
+        f for frontierFragments in fragmentsFromEachFrontier for f in frontierFragments
+    )
+    candidates = [
+        fragment
+        for fragment, frequency in allFragments.items()
+        if frequency >= 2 and fragment.wellTyped() and nontrivial(fragment)
+    ]
+
     return candidates

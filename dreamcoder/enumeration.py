@@ -485,6 +485,9 @@ def bottom_up_parallel_worker(solver, g, pcfg, pps, tasks, timeout, maximumFront
     # Quantum Circuits:
     # Instead of checking if the program is a solution for each task,
     # look if the produced unitary is in the task dictionary
+    hash_complex_array = dc.domains.quantum_circuits.primitives.hash_complex_array
+    execute_quantum_algorithm = dc.domains.quantum_circuits.primitives.execute_quantum_algorithm
+    
     tasks_hash = defaultdict(list)
     for idx, task in enumerate(tasks):
         tasks_hash[hash_complex_array(task.target_circuit_evaluation)].append(idx)
@@ -553,7 +556,7 @@ def bottom_up_parallel_worker(solver, g, pcfg, pps, tasks, timeout, maximumFront
         tasks[n]: None if len(hits[n]) == 0 else \
         min((-f.logPrior-f.logLikelihood, t) for t,f in hits[n])[1]
         for n in range(len(tasks))}
-
+    eprint("Last enumerated program:",e)
     return frontiers, totalNumberOfPrograms
 
 class EnumerationTimeout(Exception):
@@ -646,43 +649,3 @@ def enumerateForTasks(g, tasks, likelihoodModel, _=None,
     return frontiers, searchTimes, totalNumberOfPrograms
 
 
-
-
-import numpy as np
-
-from dreamcoder.domains.quantum_circuits.primitives import *
-from dreamcoder.domains.quantum_circuits.tasks import *
-import dreamcoder as dc
-
-import time
-
-def enumerate_pcfg(pcfg, timeout,
-                   observational_equivalence=True,
-                   sound=False): 
-    enum_dictionary = {}
-    t_0 = time.time()
-    
-    n_qubit = dc.domains.quantum_circuits.primitives.GLOBAL_NQUBIT_TASK
-    for code in pcfg.quantized_enumeration(observational_equivalence=observational_equivalence,
-                                           inputs=[(*range(n_qubit), no_op(n_qubit),)],
-                                           sound=sound):
-        if (time.time()>t_0+timeout): break
-        # check if it is a valid circuit
-        try: 
-            arguments = (*range(n_qubit),no_op(n_qubit))
-            circuit = execute_program(code, arguments )
-            unitary = circuit_to_mat(circuit)
-            
-            key = dc.domains.quantum_circuits.primitives.hash_complex_array(unitary)
-            task = str(code)
-            c_time = time.time()
-            # if "rep" in str(code):
-            #     eprint("YES. There is one!")
-            # If multiple programs give the same unitary
-            # we want to keep the simplest one
-            if key not in enum_dictionary:
-                enum_dictionary[key]={"code":code, "circuit":circuit, "time": c_time-t_0}
-        except QuantumCircuitException as e:
-            ...
-    eprint(f"Enumerated {len(enum_dictionary)} programs")
-    return enum_dictionary

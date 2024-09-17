@@ -39,3 +39,7 @@ old_logs
 # Added by cargo
 
 /target
+
+/akash/hamiltonians/*
+/akash/solved_RL_circuits/*
+*.pickle

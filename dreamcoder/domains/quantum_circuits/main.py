@@ -34,9 +34,10 @@ def get_tasks(enumeration_timeout, label):
         dc.utilities.eprint("No task dataset found, generating a new one.")
 
         tasks = makeTasks(enumeration_timeout)
-        n_train = 1000  # int(len(tasks)/30)
+        n_train = 5000  # int(len(tasks)/30)  # TODO: this should be a flag
 
         total_indices = np.arange(len(tasks))
+        # TODO: weight should be assigned in a different way, perhaps a variable in the task
         probs = np.array([task.name[6:].count("(") for task in tasks], dtype=float)
         for i in np.arange(np.max(probs)+1):
             m = probs[probs == i].sum()
