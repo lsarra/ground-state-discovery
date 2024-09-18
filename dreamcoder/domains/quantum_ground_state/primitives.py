@@ -527,9 +527,9 @@ def two_qubit_gate(old_circuit, qubit_1, qubit_2, operation_name):
     if qubit_1 == qubit_2:
         raise QuantumCircuitException("Invalid selected qubit")
 
-    if GLOBAL_LIMITED_CONNECTIVITY and abs(qubit_1-qubit_2) != 1:
-        # eprint("REJECTED")
-        raise QuantumCircuitException("Invalid selected qubit: connectivity limited to neighbouring qubits!")
+    # if GLOBAL_LIMITED_CONNECTIVITY and abs(qubit_1-qubit_2) != 1:
+    #     # eprint("REJECTED")
+    #     raise QuantumCircuitException("Invalid selected qubit: connectivity limited to neighbouring qubits!")
 
     circuit = circuit + ((operation_name, qubit_1, qubit_2),)
     return (n_qubit, circuit)
@@ -537,10 +537,11 @@ def two_qubit_gate(old_circuit, qubit_1, qubit_2, operation_name):
 
 def n_qubit_gate(*args, operation_name):
     old_circuit = list(filter(lambda x: type(x) == tuple, args))[0]
-    qubit = tuple(filter(lambda x: type(x) == int, args))
+    # include qubit arguments and parameters
+    arguments = tuple(filter(lambda x: type(x) in [int, float], args))
 
     n_qubit, circuit = old_circuit
-    circuit = circuit + ((operation_name, *qubit),)
+    circuit = circuit + ((operation_name, *arguments),)
     return (n_qubit, circuit)
 
 # Circuit primitives
@@ -800,7 +801,7 @@ def get_qiskit_circuit(circuit):
             try:
                 qiskit_full_op_names[op[0]](QT, *op[1:])
             except qk.circuit.exceptions.CircuitError as e:
-                # eprint("invalid quantum circuit! (duplicate arguments)")
+                eprint(f"invalid quantum circuit! {e}")
                 return QiskitTester(n_qubit)
 
     return QT
@@ -871,9 +872,6 @@ def get_code_from_instructions(instructions: tuple) -> Tuple[str,tuple]:
 
 def execute_program(program:Program, arguments:tuple):
     # Arguments has shape (n_qubits, (arg1, arg2,...))
-    # TODO: remove eprint
-    if "rep" in str(program):
-        eprint(program)
     circuit = program.evaluate([])
     for arg in arguments:
         circuit = circuit(arg)
