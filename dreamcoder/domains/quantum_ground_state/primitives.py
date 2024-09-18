@@ -780,7 +780,7 @@ def circuit_to_mat(full_circuit):
             full_circuit_cache[t_full_circuit] = mat
 
     except TypeError as e:
-        print(e)
+        eprint(e)
         ...
     return full_circuit_cache[t_full_circuit]
 

@@ -46,16 +46,13 @@ class TypeConstructor(Type):
     def show(self, isReturn):
         if self.name == ARROW:
             if isReturn:
-                return "%s %s %s" % (self.arguments[0].show(
-                    False), ARROW, self.arguments[1].show(True))
+                return f"{self.arguments[0].show(False)} {ARROW} {self.arguments[1].show(True)}"
             else:
-                return "(%s %s %s)" % (self.arguments[0].show(
-                    False), ARROW, self.arguments[1].show(True))
+                return f"({self.arguments[0].show(False)} {ARROW} {self.arguments[1].show(True)})"
         elif self.arguments == []:
             return self.name
         else:
-            return "%s(%s)" % (self.name, ", ".join(x.show(True)
-                                                    for x in self.arguments))
+            return f"{self.name}({", ".join(x.show(True) for x in self.arguments)})"
 
     def json(self):
         return {"constructor": self.name,
