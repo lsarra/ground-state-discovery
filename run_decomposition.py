@@ -21,32 +21,34 @@ from dreamcoder.task import Task
 from dreamcoder.utilities import numberOfCPUs
 import dreamcoder.domains.quantum_ground_state.primitives as pr
 from dreamcoder.domains.quantum_ground_state.primitives import (
+    circuit_to_mat,
+    full_op_names,
     mat_contraction,
     mat_to_tensor,
-    circuit_to_mat,
-    tensor_contraction,
     execute_program,
     normalize_unitary,
     get_qiskit_circuit,
     get_instructions_from_qiskit,
     get_code_from_instructions,
+    qiskit_full_op_names,
     tcircuit,
+    tensor_contraction,
     no_op,
+    n_qubit_gate,
     QiskitTester,
 )
 from dreamcoder.domains.quantum_ground_state.primitives import execute_quantum_algorithm
 from dreamcoder.domains.quantum_ground_state.tasks import GroundStateTask,get_energy
-from dreamcoder.program import Program
-from dreamcoder.utilities import eprint
+from dreamcoder.program import Program, Primitive, EtaLongVisitor
+from dreamcoder.utilities import eprint, Curried
 
-mag_field_strength_list = [0.001, 0.1, 1, 1.5]
 decomposed_list = [0, 1]
 
 
 class args:
     n_qubits = 2
     J = 1
-    hh = mag_field_strength_list[0]
+    hh = 0.05
     decomposed = 1
     arity = 2
     structurePenalty = 1
@@ -112,12 +114,17 @@ solutions = {}  # dict of task:solution
 # NOTE: we have a task for each decomposition because they have various different real parameters
 # We cannot have solutions with different requests for a task,
 # and it is not clear how to use real numbers as primitives (just for evaluation, we cannot enumerate them)
-for idx,circuit in enumerate(b):
+for idx, circuit in enumerate(b):
     H = construct_hamiltonian(args.J, args.hh, args.n_qubits)
     instructions = get_instructions_from_qiskit(circuit)
     code, arguments = get_code_from_instructions(instructions)
     program = Program.parse(code)
-    task = GroundStateTask(f"J_{args.J:2.2f}_h_{args.hh:2.2f}_N_{args.n_qubits}_v{idx}",hamiltonian=H, arguments=arguments, request = program.infer())
+    task = GroundStateTask(
+        f"J_{args.J:2.2f}_h_{args.hh:2.2f}_N_{args.n_qubits}_v{idx}",
+        hamiltonian=H,
+        arguments=arguments,
+        request=program.infer(),
+    )
     likelihood = task.logLikelihood(program)
     prior = grammar.logLikelihood(program.infer(), program)
 
@@ -136,24 +143,27 @@ frontiers = [f for f in solutions.values()]
 unique_frontiers_set = set()
 unique_frontiers = []
 for frontier in frontiers:
-    program=  frontier.entries[0].program
+    program = frontier.entries[0].program
     if program not in unique_frontiers_set:
         unique_frontiers_set.add(program)
         unique_frontiers.append(frontier)
-eprint(f"We have {len(unique_frontiers)}/{len(frontiers)} frontiers. The others are duplicate solutions")
+eprint(
+    f"We have {len(unique_frontiers)}/{len(frontiers)} frontiers. The others are duplicate solutions"
+)
 
 unique_frontiers
 new_grammar, new_frontiers = FragmentGrammar.induceFromFrontiers(
-    g0=grammar, frontiers=unique_frontiers, **library_settings,
-    CPUs=numberOfCPUs()
+    g0=grammar,
+    frontiers=unique_frontiers[:],
+    **library_settings,
+    CPUs=numberOfCPUs() - 2
 )
 
-eprint(new_grammar, new_frontiers)
-
+new_grammar, new_frontiers
 timestamp = datetime.now().isoformat()
-with open(f"experimentOutputs/{timestamp}_{name}_grammar.pickle","wb") as f:
-    pickle.dump(new_grammar,f)
-    
-with open(f"experimentOutputs/{timestamp}_{name}_frontiers.pickle","wb") as f:
-    pickle.dump(new_frontiers,f)
+with open(f"experimentOutputs/{timestamp}_{name}_grammar.pickle", "wb") as f:
+    pickle.dump(new_grammar, f)
+
+with open(f"experimentOutputs/{timestamp}_{name}_frontiers.pickle", "wb") as f:
+    pickle.dump(new_frontiers, f)
 eprint(f"Results saved in experimentOutputs/{timestamp}_{name}_...")
