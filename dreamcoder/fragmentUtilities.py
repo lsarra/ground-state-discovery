@@ -272,16 +272,14 @@ def proposeFragmentsFromFragment(f):
     '''Abstracts out repeated structure within a single fragment'''
     yield f
     freeVariables = f.numberOfFreeVariables
-    closedSubtrees = Counter(
-        subtree for _,
-        subtree in f.walk() if not isinstance(
-            subtree,
-            Index) and subtree.closed)
+    
+    _closed_subtrees = (subtree for _, subtree in f.walk() if not isinstance(subtree,Index) and subtree.closed)
+    closedSubtrees = Counter(_closed_subtrees)
     del closedSubtrees[f]
     for subtree, freq in closedSubtrees.items():
-        if freq < 2:
-            continue
-        yield canonicalFragment(f.substitute(subtree, Index(freeVariables)))
+        if freq < 2: continue
+        replaced = f.substitute(subtree, Index(freeVariables))
+        yield canonicalFragment(replaced)
 
 
 def nontrivial(f):
@@ -312,8 +310,7 @@ def nontrivial(f):
             numberOfVariables += 1
     #eprint("Fragment %s has %d calls and %d variables and %d primitives"%(f,numberOfHoles,numberOfVariables,numberOfPrimitives))
 
-    return numberOfPrimitives + 0.5 * \
-        (numberOfHoles + numberOfVariables) > 1.5 and numberOfPrimitives >= 1
+    return numberOfPrimitives + 0.5 * (numberOfHoles + numberOfVariables) > 1.5 and numberOfPrimitives >= 1
 
 
 def violatesLaziness(fragment):
@@ -345,69 +342,73 @@ def violatesLaziness(fragment):
     return False
 
 
-def proposeFragmentsFromProgram(p, arity):
+def _fragment(expression, a, toplevel=True):
+    """Generates fragments that unify with expression"""
 
-    def fragment(expression, a, toplevel=True):
-        """Generates fragments that unify with expression"""
+    if a == 1:
+        yield FragmentVariable.single
+    if a == 0:
+        yield expression
+        return
 
-        if a == 1:
-            yield FragmentVariable.single
-        if a == 0:
-            yield expression
-            return
+    if isinstance(expression, Abstraction):
+        # Symmetry breaking: (\x \y \z ... f(x,y,z,...)) defragments to be
+        # the same as f(x,y,z,...)
+        if not toplevel:
+            for b in _fragment(expression.body, a, toplevel=False):
+                yield Abstraction(b)
+    elif isinstance(expression, Application):
+        for fa in range(a + 1):
+            for f in _fragment(expression.f, fa, toplevel=False):
+                for x in _fragment(expression.x, a - fa, toplevel=False):
+                    yield Application(f, x)
+    else:
+        assert isinstance(expression, (Invented, Primitive, Index))
 
-        if isinstance(expression, Abstraction):
-            # Symmetry breaking: (\x \y \z ... f(x,y,z,...)) defragments to be
-            # the same as f(x,y,z,...)
-            if not toplevel:
-                for b in fragment(expression.body, a, toplevel=False):
-                    yield Abstraction(b)
-        elif isinstance(expression, Application):
-            for fa in range(a + 1):
-                for f in fragment(expression.f, fa, toplevel=False):
-                    for x in fragment(expression.x, a - fa, toplevel=False):
-                        yield Application(f, x)
+def _fragments(expression, a):
+    """Generates fragments that unify with subexpressions of expression"""
+
+    yield from _fragment(expression, a)
+    if isinstance(expression, Application):
+        curry = True
+        if curry:
+            yield from _fragments(expression.f, a)
+            yield from _fragments(expression.x, a)
         else:
-            assert isinstance(expression, (Invented, Primitive, Index))
+            # Pretend that it is not curried
+            function, arguments = expression.applicationParse()
+            yield from _fragments(function, a)
+            for argument in arguments:
+                yield from _fragments(argument, a)
+    elif isinstance(expression, Abstraction):
+        yield from _fragments(expression.body, a)
+    else:
+        assert isinstance(expression, (Invented, Primitive, Index))
 
-    def fragments(expression, a):
-        """Generates fragments that unify with subexpressions of expression"""
-
-        yield from fragment(expression, a)
-        if isinstance(expression, Application):
-            curry = True
-            if curry:
-                yield from fragments(expression.f, a)
-                yield from fragments(expression.x, a)
-            else:
-                # Pretend that it is not curried
-                function, arguments = expression.applicationParse()
-                yield from fragments(function, a)
-                for argument in arguments:
-                    yield from fragments(argument, a)
-        elif isinstance(expression, Abstraction):
-            yield from fragments(expression.body, a)
-        else:
-            assert isinstance(expression, (Invented, Primitive, Index))
-
-    return {canonicalFragment(f) for b in range(arity + 1)
-            for f in fragments(p, b) if nontrivial(f)}
+def proposeFragmentsFromProgram(p:Program, arity:int):
+    """Generates all fragments for a given program"""
+    fragments = set()
+    for a in range(arity+1):
+        for f in _fragments(p,a):
+            if nontrivial(f):
+                canonical_fragment = canonicalFragment(f)
+                fragments.add(canonical_fragment)
+    return fragments
 
 
-def proposeFragmentsFromFrontiers(frontiers, a, CPUs=1):
-    fragmentsFromEachFrontier = parallelMap(
-        CPUs,
-        lambda frontier: {
-            fp
-            for entry in frontier.entries
-            for f in proposeFragmentsFromProgram(entry.program, a)
-            for fp in proposeFragmentsFromFragment(f)
-        },
-        frontiers,
-    )
-    allFragments = Counter(
-        f for frontierFragments in fragmentsFromEachFrontier for f in frontierFragments
-    )
+def _frontier_fragmenter(frontier:Frontier,arity):
+    """Returns all fragments from a single frontier (without pruning them )"""
+    fragments = set()
+    for entry in frontier.entries:
+        for f in proposeFragmentsFromProgram(entry.program,arity):
+            for fp in proposeFragmentsFromFragment(f):
+                fragments.add(fp)
+    return fragments
+
+def proposeFragmentsFromFrontiers(frontiers:List[Frontier], arity:int, CPUs:int=1):
+    
+    fragmentsFromEachFrontier = parallelMap(CPUs,lambda f, a=arity: _frontier_fragmenter(f,a),frontiers)
+    allFragments = Counter(f for frontierFragments in fragmentsFromEachFrontier for f in frontierFragments)
     candidates = [
         fragment
         for fragment, frequency in allFragments.items()

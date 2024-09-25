@@ -156,7 +156,7 @@ new_grammar, new_frontiers = FragmentGrammar.induceFromFrontiers(
     g0=grammar,
     frontiers=unique_frontiers[:],
     **library_settings,
-    CPUs=numberOfCPUs() - 2
+    CPUs=2#numberOfCPUs() - 2
 )
 
 new_grammar, new_frontiers

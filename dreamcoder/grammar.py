@@ -72,8 +72,9 @@ class Grammar(object):
         self.__init__(state['logVariable'], state['productions'], continuationType=continuationType)
 
     @staticmethod
-    def fromProductions(productions, logVariable=0.0, continuationType=None):
+    def fromProductions(productions: tuple, logVariable=0.0, continuationType=None):
         """Make a grammar from primitives and their relative logpriors."""
+        # productions = (likelihood, primitive)
         return Grammar(logVariable, [(l, p.infer(), p)
                                      for l, p in productions],
                        continuationType=continuationType)
@@ -411,14 +412,14 @@ class Grammar(object):
             assert False
         return summary.logLikelihood(self)
 
-    def rescoreFrontier(self, frontier):
-        return Frontier([FrontierEntry(e.program,
+    def rescoreFrontier(self, frontier:Frontier):
+        return Frontier(frontier=[FrontierEntry(e.program,
                                        logPrior=self.logLikelihood(frontier.task.request, e.program),
                                        logLikelihood=e.logLikelihood)
                          for e in frontier],
-                        frontier.task)
+                        task=frontier.task)
 
-    def productionUses(self, frontiers):
+    def productionUses(self, frontiers:List[Frontier]):
         """Returns the expected number of times that each production was used. {production: expectedUses}"""
         frontiers = [self.rescoreFrontier(f).normalize()
                      for f in frontiers if not f.empty]
@@ -836,16 +837,23 @@ normalizers = {%s})""" % (self.constant,
 class Uses(object):
     '''Tracks uses of different grammar productions'''
 
-    def __init__(self, possibleVariables=0., actualVariables=0.,
-                 possibleUses={}, actualUses={}):
+    def __init__(self, 
+                 possibleVariables:float=0., 
+                 actualVariables:float=0.,
+                 possibleUses:dict={}, 
+                 actualUses:dict={}):
         self.actualVariables = actualVariables
         self.possibleVariables = possibleVariables
         self.possibleUses = possibleUses
         self.actualUses = actualUses
 
     def __str__(self):
-        return "Uses(actualVariables = %f, possibleVariables = %f, actualUses = %s, possibleUses = %s)" %\
-            (self.actualVariables, self.possibleVariables, self.actualUses, self.possibleUses)
+        return f"""Uses(
+actualVariables = {self.actualVariables}, 
+possibleVariables = {self.possibleVariables}, 
+actualUses = {self.actualUses}, 
+possibleUses = {self.possibleUses}
+)\n""" 
 
     def __repr__(self): return str(self)
 

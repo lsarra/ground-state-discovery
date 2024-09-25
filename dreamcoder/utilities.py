@@ -203,6 +203,7 @@ def parallelMap(numberOfCPUs, f, *xs, chunksize=None, maxtasksperchild=None, mem
 
     assert PARALLELMAPDATA is None    
     PARALLELMAPDATA = (f, xs)
+    
     assert PARALLELBASESEED is None
     if seedRandom:
         PARALLELBASESEED = random.random()
@@ -219,8 +220,7 @@ def parallelMap(numberOfCPUs, f, *xs, chunksize=None, maxtasksperchild=None, mem
         chunksize = max(1, n // (numberOfCPUs * 2))
         
     with Pool(numberOfCPUs, maxtasksperchild=maxtasksperchild) as pool:
-        ys = pool.map(parallelMapCallBack, permutation,
-                  chunksize=chunksize)
+        ys = pool.map(parallelMapCallBack, permutation, chunksize=chunksize)
 
     PARALLELMAPDATA = None
     PARALLELBASESEED = None
@@ -259,6 +259,7 @@ def exp(x):
 
 
 def lse(x, y=None):
+    """Log sum exp"""
     if y is None:
         largest = None
         if len(x) == 0:

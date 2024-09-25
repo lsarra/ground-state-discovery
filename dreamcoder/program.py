@@ -219,7 +219,8 @@ class Program(object):
         return p(s, [])
                 
                 
-
+    def visit(self, visitor, *arguments, **keywords):
+        raise NotImplementedError()
 
 class Application(Program):
     '''Function application'''
@@ -278,13 +279,11 @@ class Application(Program):
 
 
     @property
-    def isApplication(self): return True
+    def isApplication(self): 
+        return True
 
-    def __eq__(
-        self,
-        other): return isinstance(
-        other,
-        Application) and self.f == other.f and self.x == other.x
+    def __eq__(self,other): 
+        return isinstance(other,Application) and self.f == other.f and self.x == other.x
 
     def __hash__(self):
         if self.hashCode is None:
@@ -321,18 +320,14 @@ class Application(Program):
 
         self.hashCode = None
 
-    def visit(self,
-              visitor,
-              *arguments,
-              **keywords): return visitor.application(self,
-                                                      *arguments,
-                                                      **keywords)
+    def visit(self,visitor,*arguments,**keywords):
+        return visitor.application(self,*arguments,**keywords)
 
-    def show(self, isFunction):
+    def show(self, isFunction:bool):
         if isFunction:
-            return "%s %s" % (self.f.show(True), self.x.show(False))
+            return f"{self.f.show(True)} {self.x.show(False)}"
         else:
-            return "(%s %s)" % (self.f.show(True), self.x.show(False))
+            return f"({self.f.show(True)} {self.x.show(False)})" 
 
     def evaluate(self, environment):
         if self.isConditional:
@@ -416,11 +411,14 @@ class Index(Program):
     def __init__(self, i:int):
         self.i = i
 
-    def show(self, isFunction): return "$%d" % self.i
+    def show(self, isFunction): 
+        return "$%d" % self.i
 
-    def __eq__(self, o): return isinstance(o, Index) and o.i == self.i
+    def __eq__(self, o): 
+        return isinstance(o, Index) and o.i == self.i
 
-    def __hash__(self): return self.i
+    def __hash__(self): 
+        return self.i
 
     def minimumIndex(self, depth):
         if self.i <= depth:
@@ -475,7 +473,8 @@ class Index(Program):
         else:
             return self
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -608,30 +607,29 @@ class Abstraction(Program):
 class Primitive(Program):
     GLOBALS = {}
 
-    def __init__(self, name, ty, value):
+    def __init__(self, name:str, ty:TypeConstructor, value:Callable):
         self.tp = ty
         self.name = name
         self.value = value
         if name not in Primitive.GLOBALS:
             Primitive.GLOBALS[name] = self
-
+    
+    def __repr__(self):
+        return f"{self.name} : {self.tp} -> {self.value}"
     @property
     def isPrimitive(self): return True
 
     def minimumIndex(self, depth):
         return POSITIVEINFINITY
 
-    def __eq__(self, o): return isinstance(
-        o, Primitive) and o.name == self.name
+    def __eq__(self, o): 
+        return isinstance(o, Primitive) and o.name == self.name
 
-    def __hash__(self): return hash(self.name)
+    def __hash__(self): 
+        return hash(self.name)
 
-    def visit(self,
-              visitor,
-              *arguments,
-              **keywords): return visitor.primitive(self,
-                                                    *arguments,
-                                                    **keywords)
+    def visit(self,visitor,*arguments,**keywords): 
+        return visitor.primitive(self,*arguments,**keywords)
 
     def show(self, isFunction): return self.name
 
@@ -659,7 +657,8 @@ class Primitive(Program):
         else:
             return self
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -703,7 +702,7 @@ class Invented(Program):
     def minimumIndex(self, depth):
         return POSITIVEINFINITY
 
-    def show(self, isFunction): return "#%s" % (self.body.show(False))
+    def show(self, isFunction): return f"#{self.body.show(False)}"
 
     def visit(self,
               visitor,
@@ -753,7 +752,8 @@ class Invented(Program):
         else:
             return self
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -816,7 +816,8 @@ class FragmentVariable(Program):
         except ShiftFailure:
             raise MatchFailure()
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -855,7 +856,8 @@ class Hole(Program):
     def shift(self, offset, depth=0):
         raise Exception('Attempt to shift fragment variable')
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -894,7 +896,8 @@ class NamedHole(Program):
     def shift(self, offset, depth=0):
         raise Exception('Attempt to shift named hl')
 
-    def walk(self, surroundingAbstractions=0): yield surroundingAbstractions, self
+    def walk(self, surroundingAbstractions=0): 
+        yield surroundingAbstractions, self
 
     def walkUncurried(self, d=0): yield d, self
 
@@ -1236,9 +1239,9 @@ class ReplacePrimitiveValueVisitor():
         return Abstraction(e.body.visit(self))
     def index(self,e): return e
 
-def strip_primitive_values(e):
+def strip_primitive_values(e:Program):
     return e.visit(StripPrimitiveVisitor())
-def unstrip_primitive_values(e):
+def unstrip_primitive_values(e:Program):
     return e.visit(ReplacePrimitiveValueVisitor())
     
 

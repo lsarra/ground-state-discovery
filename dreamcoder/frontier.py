@@ -17,14 +17,14 @@ class FrontierEntry(object):
         self.logLikelihood = logLikelihood
 
     def __repr__(self):
-        return "FrontierEntry(program={self.program}, logPrior={self.logPrior}, logLikelihood={self.logLikelihood}".format(
-            self=self)
+        return f"FrontierEntry(program={self.program}, logPrior={self.logPrior}, logLikelihood={self.logLikelihood}"
 
     def strip_primitive_values(self):
         return FrontierEntry(program=strip_primitive_values(self.program),
                              logPrior=self.logPrior,
                              logPosterior=self.logPosterior,
                              logLikelihood=self.logLikelihood)
+        
     def unstrip_primitive_values(self):
         return FrontierEntry(program=unstrip_primitive_values(self.program),
                              logPrior=self.logPrior,
@@ -33,7 +33,7 @@ class FrontierEntry(object):
 
 
 class Frontier(object):
-    def __init__(self, frontier, task):
+    def __init__(self, frontier:List[FrontierEntry], task):
         self.entries = frontier
         self.task = task
 
