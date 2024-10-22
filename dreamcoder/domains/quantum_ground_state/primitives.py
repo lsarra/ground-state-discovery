@@ -1,5 +1,3 @@
-
-
 import numpy as np
 from typing import Tuple
 
@@ -154,6 +152,8 @@ try:
 
     # ------------------------------------------ End of Qiskit code
 except Exception as e:
+    class QuantumCircuit:
+        ...
     eprint("Qiskit not found. Necessary for quantum circuit plots.")
     eprint(e)
 

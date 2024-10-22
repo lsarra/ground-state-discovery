@@ -8,6 +8,7 @@
 *.blg
 *.p
 *.pyc
+*.dat
 *~
 __pycache__
 _build

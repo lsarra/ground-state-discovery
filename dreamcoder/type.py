@@ -52,7 +52,7 @@ class TypeConstructor(Type):
         elif self.arguments == []:
             return self.name
         else:
-            return f"{self.name}({", ".join(x.show(True) for x in self.arguments)})"
+            return f"{self.name}({', '.join(x.show(True) for x in self.arguments)})"
 
     def json(self):
         return {"constructor": self.name,

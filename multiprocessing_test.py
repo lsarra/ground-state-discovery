@@ -1,52 +1,29 @@
 #! /bin/env python
+from multiprocessing import set_start_method
+
 import argparse
 import dill
-from datetime import datetime
-import matplotlib.pyplot as plt
-import numpy as np
-import pickle
-import qiskit as qk
-from qiskit.quantum_info import Operator, Statevector
-from qiskit.circuit.quantumcircuit import QuantumCircuit
+from contextlib import closing
+import logging
+from multiprocessing import Pool
 import time
-import tqdm
-from typing import Tuple
+from memory_profiler import profile
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from akash.TFIM_ham_gen import construct_hamiltonian
 
 import dreamcoder as dc
 from dreamcoder.frontier import Frontier, FrontierEntry
-from dreamcoder.fragmentGrammar import FragmentGrammar
 from dreamcoder.grammar import Grammar
 from dreamcoder.program import Program
-from dreamcoder.program import Abstraction
-from dreamcoder.task import Task
-from dreamcoder.utilities import numberOfCPUs
 import dreamcoder.domains.quantum_ground_state.primitives as pr
 from dreamcoder.domains.quantum_ground_state.primitives import (
-    circuit_to_mat,
-    full_op_names,
-    mat_contraction,
-    mat_to_tensor,
-    execute_program,
-    normalize_unitary,
-    get_qiskit_circuit,
     get_instructions_from_qiskit,
     get_code_from_instructions,
-    qiskit_full_op_names,
-    tcircuit,
-    tensor_contraction,
-    no_op,
-    n_qubit_gate,
-    QiskitTester,
 )
-from dreamcoder.domains.quantum_ground_state.primitives import execute_quantum_algorithm
-from dreamcoder.domains.quantum_ground_state.tasks import GroundStateTask,get_energy
-from dreamcoder.program import Program, Primitive, EtaLongVisitor
-from dreamcoder.utilities import eprint, Curried
-
-decomposed_list = [0, 1]
-
+from dreamcoder.domains.quantum_ground_state.tasks import GroundStateTask
+from dreamcoder.program import Program
+from dreamcoder.utilities import eprint
 
 class args:
     n_qubits = 2
@@ -112,7 +89,7 @@ library_settings = {
 
 primitives = [pr.p_sx, pr.p_x, pr.p_rz, pr.p_cz]
 grammar = Grammar.uniform(primitives)
-eprint(f"Library building settings: {library_settings}")
+# eprint(f"Library building settings: {library_settings}")
 # Generate a few example tasks
 solutions = {}  # dict of task:solution
 # NOTE: we have a task for each decomposition because they have various different real parameters
@@ -140,7 +117,7 @@ for idx, circuit in enumerate(b):
         frontier=[frontier_entry],  # multiple solutions are allowed
         task=task,
     )
-    eprint(f"#{idx:3}, Energy = {likelihood:2.6f}")
+    # eprint(f"#{idx:3}, Energy = {likelihood:2.6f}")
 tasks = list(solutions.keys())
 frontiers = [f for f in solutions.values()]
 
@@ -155,24 +132,47 @@ eprint(
     f"We have {len(unique_frontiers)}/{len(frontiers)} frontiers. The others are duplicate solutions"
 )
 
-unique_frontiers
-# Run library decomposition
-start = time.time()
-new_grammar, new_frontiers = FragmentGrammar.induceFromFrontiers(
-    g0=grammar,
-    frontiers=unique_frontiers[:],
-    **library_settings,
-    CPUs=8#1#numberOfCPUs() - 2
-)
-end = time.time()
-delta = end-start
-eprint(f"Completed gate extraction in {delta} seconds.")
-new_grammar, new_frontiers
-# Save results
-timestamp = datetime.now().isoformat()
-with open(f"experimentOutputs/{timestamp}_{name}_grammar.pickle", "wb") as f:
-    pickle.dump(new_grammar, f)
 
-with open(f"experimentOutputs/{timestamp}_{name}_frontiers.pickle", "wb") as f:
-    pickle.dump(new_frontiers, f)
-eprint(f"Results saved in experimentOutputs/{timestamp}_{name}_...")
+@profile
+def parallelMap(numberOfCPUs, f, *xs, chunksize=None, maxtasksperchild=None):
+    if numberOfCPUs == 1:
+        return list(map(f, *xs))
+
+    n = len(xs[0])
+    for x in xs:
+        assert len(x) == n
+
+    # Batch size of jobs as they are sent to processes
+    if chunksize is None:
+        chunksize = max(1, n // (numberOfCPUs * 2))
+
+    with closing(Pool(numberOfCPUs, maxtasksperchild=maxtasksperchild)) as pool:
+        # ys = pool.map(parallelMapCallBack, range(n), chunksize=chunksize)
+        ys = pool.map(f, xs[0], chunksize=chunksize)
+    # with ProcessPoolExecutor(max_workers=numberOfCPUs) as executor:
+    #     ys = executor.map(f, xs[0], chunksize=chunksize)
+
+    return ys
+
+
+arity = 2
+CPUs = 1
+
+
+def fragment(frontier, a=arity):
+    return dc.fragmentUtilities._frontier_fragmenter(frontier, a)
+
+
+if __name__ == "__main__":
+    # set_start_method("spawn")
+    
+    from mem_top import mem_top
+    import gc
+
+    start = time.time()
+    result = parallelMap(CPUs, fragment, unique_frontiers[1:2])
+    end = time.time()
+    eprint(f"Completed gate extraction in { end-start} seconds using {CPUs} CPUs.")
+    del result
+    gc.collect()
+    print(mem_top())

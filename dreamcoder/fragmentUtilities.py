@@ -1,6 +1,7 @@
 from dreamcoder.type import *
 from dreamcoder.program import *
 from dreamcoder.frontier import *
+from memory_profiler import profile
 
 from collections import Counter
 
@@ -268,6 +269,7 @@ class RewriteFragments(object):
                         task=frontier.task)
 
 
+@profile
 def proposeFragmentsFromFragment(f):
     '''Abstracts out repeated structure within a single fragment'''
     yield f
@@ -385,6 +387,7 @@ def _fragments(expression, a):
     else:
         assert isinstance(expression, (Invented, Primitive, Index))
 
+@profile
 def proposeFragmentsFromProgram(p:Program, arity:int):
     """Generates all fragments for a given program"""
     fragments = set()
@@ -396,6 +399,7 @@ def proposeFragmentsFromProgram(p:Program, arity:int):
     return fragments
 
 
+@profile
 def _frontier_fragmenter(frontier:Frontier,arity):
     """Returns all fragments from a single frontier (without pruning them )"""
     fragments = set()
